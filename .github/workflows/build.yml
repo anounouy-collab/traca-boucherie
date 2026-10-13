@@ -32,7 +32,7 @@ jobs:
           curl -fsSL https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js -o app/src/main/assets/zxing.min.js
 
       - name: Construire
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: gradle assembleRelease --no-daemon --stacktrace > build.log 2>&1 || touch failed ; grep -i -A4 -e error -e wrong build.log | head -80 >> $GITHUB_STEP_SUMMARY ; test ! -f failed
 
       - name: Renommer
         run: cp app/build/outputs/apk/release/app-release.apk Traca-Boucherie-Mmarket.apk
