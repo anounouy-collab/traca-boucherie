@@ -1,0 +1,56 @@
+name: Traca APK et iPhone
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparer
+        run: |
+          unzip -o projet.zip -d .
+          for n in $(ls traca-maj-*.b64 | sed -E 's/^(traca-maj-[0-9]+).*/\1/' | sort -u); do
+            cat $n*.b64 | tr -d '\n\r ' | base64 -d | xz -d | patch -p1
+          done
+          A=app/src/main/assets
+          for m in app auth firestore; do curl -fsSL https://www.gstatic.com/firebasejs/10.12.2/firebase-$m-compat.js -o $A/fb-$m.js; done
+          mv $A/fb-firestore.js $A/fb-fs.js
+          curl -fsSL https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js -o $A/xlsx.full.min.js
+          curl -fsSL https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js -o $A/zxing.min.js
+          mkdir site && cp -r $A/. site/ && cp app/src/main/res/mipmap-xxxhdpi/ic_launcher.png site/icon.png
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Construire
+        run: gradle assembleRelease --no-daemon && cp app/build/outputs/apk/release/app-release.apk Traca-Boucherie-Mmarket.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-${{ github.run_number }}
+          name: Traça Boucherie Mmarket 2.${{ github.run_number }}
+          files: Traca-Boucherie-Mmarket.apk
+          make_latest: true
+  iphone:
+    needs: apk
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.d.outputs.page_url }}
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4
