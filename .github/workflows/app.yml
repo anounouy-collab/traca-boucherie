@@ -27,6 +27,13 @@ jobs:
           curl -fsSL https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js -o $A/xlsx.full.min.js
           curl -fsSL https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js -o $A/zxing.min.js
           mkdir site && cp -r $A/. site/ && cp app/src/main/res/mipmap-xxxhdpi/ic_launcher.png site/icon.png
+          mkdir -p site/tess && cd site/tess
+          J=https://cdn.jsdelivr.net/npm
+          curl -fsSL $J/tesseract.js@5.1.1/dist/tesseract.min.js -o tesseract.min.js
+          curl -fsSL $J/tesseract.js@5.1.1/dist/worker.min.js -o worker.min.js
+          for c in tesseract-core tesseract-core-simd tesseract-core-lstm tesseract-core-simd-lstm; do curl -fsSL $J/tesseract.js-core@5.1.1/$c.wasm.js -o $c.wasm.js; done
+          for l in fra spa; do curl -fsSL $J/@tesseract.js-data/$l@1.0.0/4.0.0_best_int/$l.traineddata.gz -o $l.traineddata.gz || curl -fsSL https://tessdata.projectnaptha.com/4.0.0_fast/$l.traineddata.gz -o $l.traineddata.gz; done
+          ls -la
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
